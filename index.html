@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Автономный MVP Сбер.Проще — покупки через локального AI-агента">
+  <meta name="theme-color" content="#071a12">
+  <title>Сбер.Проще — автономный пилот</title>
+  <script>const previewTheme = new URLSearchParams(location.search).get('theme'); document.documentElement.dataset.theme = ['light','dark'].includes(previewTheme) ? previewTheme : (localStorage.getItem('sber-prosche-theme') || 'light');</script>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Основная навигация">
+      <a class="brand" href="#home" data-route="home" aria-label="Сбер.Проще — главная">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32"><path d="M5 16.5 12.2 23 27 8.5"/><path d="M27.5 16A11.5 11.5 0 1 1 23 6.9"/></svg>
+        </span>
+        <span><strong>СБЕР</strong><small>ПРОЩЕ</small></span>
+      </a>
+
+      <nav class="nav-list">
+        <button class="nav-item active" data-route="home">
+          <span aria-hidden="true">⌂</span><span>Покупка</span>
+        </button>
+        <button class="nav-item" data-route="orders">
+          <span aria-hidden="true">▤</span><span>Мои чеки</span>
+          <b class="nav-badge" id="orders-count">0</b>
+        </button>
+        <button class="nav-item" data-route="partners">
+          <span aria-hidden="true">◇</span><span>Партнёры</span>
+        </button>
+        <button class="nav-item" data-route="about">
+          <span aria-hidden="true">?</span><span>О пилоте</span>
+        </button>
+      </nav>
+
+      <div class="offline-card">
+        <span class="status-dot"></span>
+        <div><strong>Автономный режим</strong><small>Сеть не используется</small></div>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">СБЕР × ВКЛАД В БУДУЩЕЕ</p>
+          <h1 id="page-title">Покупка в один запрос</h1>
+        </div>
+        <div class="topbar-actions">
+          <button class="wallet-button" id="wallet-button" aria-label="Открыть тестовый кошелёк">
+            <span class="wallet-icon">₽</span>
+            <span><small>Доступно</small><strong id="header-balance">50 000 ₽</strong></span>
+          </button>
+          <button class="theme-toggle" id="theme-toggle" aria-label="Переключить цветовую тему" title="Переключить тему">
+            <span class="theme-sun">☀</span><span class="theme-moon">☾</span>
+          </button>
+          <button class="avatar" aria-label="Профиль пользователя">А</button>
+        </div>
+      </header>
+
+      <section class="page active" id="page-home" data-page="home">
+        <section class="ticket-search-card" aria-labelledby="ticket-search-title">
+          <div class="search-card-head">
+            <div><span class="search-kicker">МОК-КАТАЛОГ · 36 РЕЙСОВ</span><h2 id="ticket-search-title">Найти авиабилет</h2></div>
+            <span class="local-chip"><i></i> Только локальные данные</span>
+          </div>
+          <div class="product-tabs" aria-label="Тип поездки">
+            <button class="active" type="button"><span>✈</span> Авиабилеты</button>
+            <button type="button" disabled><span>▰</span> Поезда <small>скоро</small></button>
+            <button type="button" disabled><span>⌂</span> Отели <small>скоро</small></button>
+          </div>
+          <form class="flight-search" id="flight-search-form">
+            <label><span>Откуда</span><select id="flight-origin" name="origin" aria-label="Город отправления"></select></label>
+            <button type="button" class="swap-button" id="swap-cities" aria-label="Поменять города местами">⇄</button>
+            <label><span>Куда</span><select id="flight-destination" name="destination" aria-label="Город назначения"></select></label>
+            <label><span>Когда</span><input id="flight-date" name="date" type="date" required></label>
+            <label><span>Пассажиры</span><select id="flight-passengers" name="passengers"><option value="1">1 пассажир</option><option value="2">2 пассажира</option><option value="3">3 пассажира</option><option value="4">4 пассажира</option></select></label>
+            <button class="search-button" type="submit">Найти билеты <span>→</span></button>
+          </form>
+        </section>
+
+        <div class="hero-grid">
+          <section class="agent-card">
+            <div class="agent-heading">
+              <div>
+                <span class="pill"><i></i> Локальный агент</span>
+                <h2>Что нужно сделать?</h2>
+                <p>Опишите покупку обычными словами. Агент уточнит условия и предложит три варианта.</p>
+              </div>
+              <div class="agent-orb" aria-hidden="true"><span></span><span></span><span></span></div>
+            </div>
+
+            <form id="request-form" class="request-box">
+              <label class="sr-only" for="request-input">Запрос агенту</label>
+              <textarea id="request-input" rows="3" maxlength="220" placeholder="Например: купи билеты в Москву на завтра до 10 000 ₽"></textarea>
+              <div class="request-actions">
+                <span id="char-counter">0 / 220</span>
+                <button type="button" class="icon-button" id="voice-button" aria-label="Ввести запрос голосом" title="Демо голосового ввода">
+                  <svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3M8.5 21h7"/></svg>
+                </button>
+                <button class="primary-button" type="submit">Найти варианты <span>→</span></button>
+              </div>
+            </form>
+
+            <div class="quick-prompts" aria-label="Примеры запросов">
+              <button data-prompt="Купи билет из Санкт-Петербурга в Москву на завтра до 10 000 ₽">✈ Билеты в Москву</button>
+              <button data-prompt="Собери ужин на двоих до 1 500 ₽">◉ Ужин на двоих</button>
+              <button data-prompt="Найди заправку рядом, полный бак до 3 000 ₽">⌁ Заправить машину</button>
+            </div>
+          </section>
+
+          <aside class="journey-card" aria-label="Этапы покупки">
+            <div class="journey-head"><span>Сценарий</span><b id="journey-label">Новый запрос</b></div>
+            <ol class="journey-steps">
+              <li class="active" data-step="1"><span>1</span><div><b>Сказать</b><small>цель и ограничения</small></div></li>
+              <li data-step="2"><span>2</span><div><b>Выбрать</b><small>из трёх вариантов</small></div></li>
+              <li data-step="3"><span>3</span><div><b>Оплатить</b><small>одним подтверждением</small></div></li>
+            </ol>
+            <div class="privacy-note"><span>⌾</span><p><b>Данные остаются на устройстве</b><br>Запросы и чеки хранятся только в localStorage.</p></div>
+          </aside>
+        </div>
+
+        <section class="experience-strip" aria-label="Возможности пилота">
+          <article><span class="experience-icon">⌁</span><div><strong>36 рейсов</strong><small>в локальном каталоге</small></div></article>
+          <article><span class="experience-icon">◈</span><div><strong>6 партнёров</strong><small>смоделированы в пилоте</small></div></article>
+          <article><span class="experience-icon">↯</span><div><strong>0 запросов наружу</strong><small>всё работает в браузере</small></div></article>
+          <div class="experience-proof"><i></i><span>Контур защищён</span></div>
+        </section>
+
+        <section class="results-section" id="results-section" hidden>
+          <div class="section-heading">
+            <div><p class="eyebrow">ПРЕДЛОЖЕНИЯ АГЕНТА</p><h2 id="results-title">Нашёл три варианта</h2></div>
+            <div class="results-controls">
+              <span class="result-meta" id="result-meta">Локальный подбор</span>
+              <div class="sort-pills" id="sort-pills" aria-label="Сортировка рейсов" hidden>
+                <button class="active" type="button" data-sort="recommended">Оптимальные</button>
+                <button type="button" data-sort="price">Дешевле</button>
+                <button type="button" data-sort="time">Раньше</button>
+              </div>
+            </div>
+          </div>
+          <div class="offer-grid" id="offer-grid"></div>
+        </section>
+      </section>
+
+      <section class="page" id="page-orders" data-page="orders">
+        <div class="section-heading standalone">
+          <div><p class="eyebrow">ИСТОРИЯ</p><h2>Чеки и покупки</h2><p>Все операции созданы локально и не являются реальными платежами.</p></div>
+          <button class="secondary-button" id="clear-orders">Очистить историю</button>
+        </div>
+        <div id="orders-list" class="orders-list"></div>
+      </section>
+
+      <section class="page" id="page-partners" data-page="partners">
+        <div class="section-heading standalone">
+          <div><p class="eyebrow">A2A-ПЛАТФОРМА</p><h2>Мок-партнёры</h2><p>Каталоги встроены в приложение. Внешних подключений нет.</p></div>
+          <span class="result-meta">6 агентов готовы</span>
+        </div>
+        <div class="partner-grid" id="partner-grid"></div>
+      </section>
+
+      <section class="page" id="page-about" data-page="about">
+        <div class="about-layout">
+          <div class="about-copy">
+            <p class="eyebrow">О ПИЛОТЕ</p>
+            <h2>Проверяем короткий путь от намерения до покупки</h2>
+            <p>Пилот воспроизводит модель из презентации: агент банка принимает запрос, локально выбирает предложения агентов компаний и проводит демонстрационную оплату.</p>
+            <div class="feature-list">
+              <article><span>01</span><div><b>Никаких внешних API</b><p>Нет сетевых запросов, ключей и передачи пользовательских данных.</p></div></article>
+              <article><span>02</span><div><b>Три сценария</b><p>Авиабилеты, продукты для ужина и автомобильная заправка.</p></div></article>
+              <article><span>03</span><div><b>Измеримый флоу</b><p>Запрос → три предложения → подтверждение → локальный чек.</p></div></article>
+            </div>
+          </div>
+          <div class="metric-panel">
+            <p>Цель пилота</p><strong>3 шага</strong><span>вместо 7+ переходов</span>
+            <hr><p>Время сценария</p><strong>&lt; 30 сек</strong><span>на демонстрационных данных</span>
+            <button class="primary-button" data-route="home">Запустить сценарий <span>→</span></button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="payment-modal" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="payment-title">
+      <button class="modal-close" id="modal-close" aria-label="Закрыть">×</button>
+      <div id="payment-content"></div>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="wallet-modal" hidden>
+    <section class="modal wallet-modal" role="dialog" aria-modal="true" aria-labelledby="wallet-title">
+      <button class="modal-close" id="wallet-close" aria-label="Закрыть">×</button>
+      <div class="wallet-hero">
+        <span class="wallet-big-icon">₽</span>
+        <p>Тестовый кошелёк</p>
+        <strong id="wallet-balance">50 000 ₽</strong>
+        <small>Баланс хранится только в этом браузере</small>
+      </div>
+      <h2 id="wallet-title">Управление средствами</h2>
+      <button class="primary-button wide" id="wallet-topup">Пополнить на 10 000 ₽</button>
+      <button class="text-button" id="wallet-reset">Вернуть начальные 50 000 ₽</button>
+    </section>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="src/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+{
+  "name": "sber-prosche-pilot",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Автономный MVP покупок через мок-агента",
+  "scripts": {
+    "start": "node scripts/server.js",
+    "test": "node --test"
+  }
+}
